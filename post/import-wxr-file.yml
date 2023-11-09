@@ -1,0 +1,10 @@
+# ------------------------------------------------------------------------------
+# post/import-wxr-file.yml
+# ------------------------------------------------------------------------------
+
+---
+
+- name: Remove the WXR file that we just imported from the target host
+  ansible.builtin.file:
+    path: /tmp/wxr/
+    state: absent

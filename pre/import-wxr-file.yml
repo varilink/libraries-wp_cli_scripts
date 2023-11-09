@@ -1,0 +1,41 @@
+# ------------------------------------------------------------------------------
+# pre/import-wxr-file.yml
+# ------------------------------------------------------------------------------
+
+# Precursor Ansible tasks for the import-wxr-file.sh WP-CLI script when it is
+# run using Ansible.
+
+---
+
+- name: Find the WXR files in the exports directory
+  ansible.builtin.set_fact:
+    wp_wxr_files: >-
+      {{ lookup(
+        'ansible.builtin.fileglob', '../exports/*.xml', wantlist=True
+      ) }}
+
+- name: Prompt the user to select the WXR file that they want to import
+  ansible.builtin.pause:
+    prompt: |-
+      Enter the number corresponding to the WXR file you want to import below:
+      {% for file in wp_wxr_files %}
+      {{ loop.index }}. {{ file | basename }}
+      {% endfor %}
+  register: pause_result
+
+- name: Record the WXR file that was selected
+  ansible.builtin.set_fact:
+    selected_file: "{{ ( pause_result.user_input | int ) - 1 }}"
+
+- name: Fail if the entry to select a WXR file was invalid
+  ansible.builtin.fail:
+    msg: You did not enter a valid number corresponding to a WXR file
+  when: >-
+    ( selected_file | int ) < 0 or
+    wp_wxr_files[ selected_file | int ] is not defined
+
+- name: "\
+    Copy the selected WXR file to the target host so it can be imported there"
+  ansible.builtin.copy:
+    src: "{{ wp_wxr_files[ selected_file | int ] }}"
+    dest: /tmp/wxr/
